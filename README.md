@@ -2,31 +2,18 @@
 
 Scroll UTF-8 text once from right to left using ESPHome's native font renderer. The component supports proportional fonts and 1-, 2-, 4-, and 8-bpp glyphs. It stores the message, but does not create a full-width bitmap or allocate during drawing. A rolling cursor avoids rescanning text that has already passed for fonts with nonnegative advances.
 
-Copy the `components/marquee` directory beside your ESPHome YAML, preserving this layout:
-
-```text
-config/
-  matrix.yaml
-  components/
-    marquee/
-      __init__.py
-      marquee.h
-```
-
 Add these sections to the YAML (merge `external_components` with your existing section if necessary):
 
 ```yaml
 external_components:
-  - source:
-      type: local
-      path: components
+  - source: github://adipierro/esphome-marquee@main
     components: [marquee]
 
 marquee:
   id: scroll_text
 ```
 
-The files must be available to the machine performing ESPHome's configuration and build, including remote builds. This is an external component, so remove the old `globals:` entry of type `Marquee` and the old `esphome.includes` entry for the header. On recent ESPHome versions, user headers can be included *after* generated globals, which causes the `Marquee was not declared` error; the component makes its header available before those declarations.
+ESPHome fetches the component from GitHub during configuration. This is an external component, so remove the old `globals:` entry of type `Marquee` and the old `esphome.includes` entry for the header. On recent ESPHome versions, user headers can be included *after* generated globals, which causes the `Marquee was not declared` error; the component makes its header available before those declarations.
 
 Define an ESPHome font and initialize the marquee once in your existing `esphome:` block:
 
