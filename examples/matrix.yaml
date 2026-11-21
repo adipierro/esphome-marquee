@@ -26,6 +26,9 @@ external_components:
 
 marquee:
   id: scroll_text
+  on_finished:
+    then:
+      - display.page.show: next_page
 
 i2c:
   sda: GPIO21
@@ -43,12 +46,3 @@ display:
       - id: next_page
         lambda: |-
           it.print(0, 8, id(message_font), "Done!");
-
-interval:
-  - interval: 50ms
-    then:
-      - if:
-          condition:
-            lambda: 'return id(scroll_text).finished() && id(matrix).get_active_page() == id(marquee_page);'
-          then:
-            - display.page.show: next_page

@@ -7,6 +7,7 @@
 #include "esphome/components/display/display.h"
 #include "esphome/components/font/font.h"
 #include "esphome/components/unicode/unicode.h"
+#include "esphome/core/automation.h"
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
 
@@ -31,10 +32,19 @@ class Marquee : public Component {
     remainder_ = 0;
     started_ = false;
     finished_ = false;
+    pending_finished_ = false;
   }
 
   void set_speed(uint16_t pixels_per_second) { speed_ = pixels_per_second; }
   bool finished() const { return finished_; }
+  Trigger<> *get_finished_trigger() { return &finished_trigger_; }
+
+  void loop() override {
+    if (pending_finished_) {
+      pending_finished_ = false;
+      finished_trigger_.trigger();
+    }
+  }
 
   void draw(esphome::display::Display &display, int y, esphome::Color foreground,
             esphome::Color background = esphome::Color(0, 0, 0)) {
@@ -55,6 +65,7 @@ class Marquee : public Component {
 
     if (position_ + right_extent_ <= 0) {
       finished_ = true;
+      pending_finished_ = true;
       return;
     }
 
@@ -154,6 +165,8 @@ class Marquee : public Component {
   bool monotonic_{true};
   bool started_{false};
   bool finished_{false};
+  bool pending_finished_{false};
+  Trigger<> finished_trigger_;
 };
 
 }  // namespace esphome::marquee

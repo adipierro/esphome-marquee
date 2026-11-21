@@ -11,6 +11,9 @@ external_components:
 
 marquee:
   id: scroll_text
+  on_finished:
+    then:
+      - display.page.show: next_page
 ```
 
 ESPHome fetches the component from GitHub during configuration. This is an external component, so remove the old `globals:` entry of type `Marquee` and the old `esphome.includes` entry for the header. On recent ESPHome versions, user headers can be included *after* generated globals, which causes the `Marquee was not declared` error; the component makes its header available before those declarations.
@@ -37,6 +40,6 @@ In your display page's lambda, call `id(scroll_text).draw(it, 8, Color(255, 255,
 
 See [examples/matrix.yaml](examples/matrix.yaml) for a complete configuration with an SSD1306 display and page switching. Change the display platform and pins for your matrix. Define the glyphs you need in the font's `glyphs:` configuration; ESPHome draws its usual missing-glyph placeholder for unsupported characters. Invalid UTF-8 terminates the displayed text, matching ESPHome's renderer.
 
-Call `set_text(new_text, id(message_font))` whenever the message or font changes. It copies the string, measures it, and restarts the scroll. Use `set_speed(pixels_per_second)` to change the default speed of 25 pixels per second; zero pauses motion. Call `reset()` to replay the current message. `finished()` becomes true after the final visible glyph or trailing advance has left the display; it remains true until reset or new text. Check it outside the display lambda to switch pages, as in the example. When a page is inactive, elapsed time continues to accrue until the next draw; call `reset()` when replaying it.
+Call `set_text(new_text, id(message_font))` whenever the message or font changes. It copies the string, measures it, and restarts the scroll. Use `set_speed(pixels_per_second)` to change the default speed of 25 pixels per second; zero pauses motion. Call `reset()` to replay the current message. `on_finished` runs once after the final visible glyph or trailing advance has left the display, deferred until after drawing returns. You can use any ESPHome actions there; define `next_page` in your display's pages as shown in the example. A reset or new message before the deferred action runs cancels that pending notification. The `finished()` method also remains available and stays true until reset or new text. When a page is inactive, elapsed time continues to accrue until the next draw; call `reset()` when replaying it.
 
 The cursor uses actual glyph advances and bearings, including overhangs. Fonts with negative advances remain correct but require rescanning from the beginning on each frame. ESPHome's normal renderer determines glyph shaping and alpha blending; this does not implement text shaping or multiline layout. Empty text completes after the initial traversal of the display width.

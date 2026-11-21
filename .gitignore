@@ -1,0 +1,11 @@
+# ESPHome-generated builds and downloaded dependencies
+.esphome/
+
+# Python caches and local virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# macOS metadata
+.DS_Store
