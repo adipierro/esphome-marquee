@@ -1,0 +1,58 @@
+# Adapt the display platform and pins to your hardware. Copy this YAML and
+# ../components into your ESPHome configuration directory as shown
+# in the README.
+esphome:
+  name: marquee-example
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          id(scroll_text).set_text("Hello from ESPHome!", id(message_font));
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+font:
+  - file: "gfonts://Roboto Condensed"
+    id: message_font
+    size: 14
+    bpp: 4
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [marquee]
+
+marquee:
+  id: scroll_text
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    id: matrix
+    update_interval: 33ms
+    pages:
+      - id: marquee_page
+        lambda: |-
+          id(scroll_text).draw(it, 8, Color(255, 255, 255));
+      - id: next_page
+        lambda: |-
+          it.print(0, 8, id(message_font), "Done!");
+
+interval:
+  - interval: 50ms
+    then:
+      - if:
+          condition:
+            lambda: 'return id(scroll_text).finished() && id(matrix).get_active_page() == id(marquee_page);'
+          then:
+            - display.page.show: next_page
