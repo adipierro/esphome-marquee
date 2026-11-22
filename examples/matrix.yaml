@@ -38,7 +38,7 @@ display:
   - platform: ssd1306_i2c
     model: "SSD1306 128x64"
     id: matrix
-    update_interval: 33ms
+    update_interval: 40ms  # One pixel per update at the default 25 px/s.
     pages:
       - id: marquee_page
         lambda: |-
