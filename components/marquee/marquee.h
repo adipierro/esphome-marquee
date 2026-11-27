@@ -9,15 +9,12 @@
 #include "esphome/components/unicode/unicode.h"
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
-#include "esphome/core/hal.h"
 
 namespace esphome::marquee {
 
 // One right-to-left pass. Coordinates use the same top-left origin as Font::print.
 class Marquee : public Component {
  public:
-  explicit Marquee(uint16_t speed = 25) : speed_(speed) {}
-
   void set_text(const std::string &text, esphome::font::Font *font) {
     text_ = text;
     font_ = font;
@@ -29,14 +26,25 @@ class Marquee : public Component {
     first_byte_ = 0;
     first_offset_ = 0;
     position_ = 0;
-    remainder_ = 0;
     started_ = false;
     finished_ = false;
     pending_finished_ = false;
   }
 
-  void set_speed(uint16_t pixels_per_second) { speed_ = pixels_per_second; }
+  void set_pixels_per_frame(uint16_t pixels) { pixels_per_frame_ = pixels; }
   bool finished() const { return finished_; }
+  // Fraction of the complete trip, including the display width and text extent.
+  float progress() const {
+    if (finished_)
+      return 1.0f;
+    if (!started_)
+      return 0.0f;
+    const float total = static_cast<float>(start_width_) + static_cast<float>(right_extent_);
+    if (total <= 0.0f)
+      return 0.0f;
+    const float distance = static_cast<float>(start_width_) - static_cast<float>(position_);
+    return std::max(0.0f, std::min(1.0f, distance / total));
+  }
   Trigger<> *get_finished_trigger() { return &finished_trigger_; }
 
   void loop() override {
@@ -52,16 +60,13 @@ class Marquee : public Component {
       return;
 
     const int width = display.get_width();
-    const uint32_t now = esphome::millis();
     if (!started_) {
+      start_width_ = width;
       position_ = width;
       started_ = true;
     } else {
-      const uint64_t movement = uint64_t(uint32_t(now - last_ms_)) * speed_ + remainder_;
-      position_ -= static_cast<int64_t>(movement / 1000);
-      remainder_ = movement % 1000;
+      position_ -= pixels_per_frame_;
     }
-    last_ms_ = now;
 
     if (position_ + right_extent_ <= 0) {
       finished_ = true;
@@ -158,10 +163,9 @@ class Marquee : public Component {
   int64_t first_offset_{0};
   int64_t position_{0};
   int64_t right_extent_{0};
+  int start_width_{0};
   int min_bearing_{0};
-  uint32_t last_ms_{0};
-  uint64_t remainder_{0};
-  uint16_t speed_{25};
+  uint16_t pixels_per_frame_{1};
   bool monotonic_{true};
   bool started_{false};
   bool finished_{false};

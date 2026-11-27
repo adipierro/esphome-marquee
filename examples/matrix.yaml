@@ -26,6 +26,7 @@ external_components:
 
 marquee:
   id: scroll_text
+  pixels_per_frame: 1
   on_finished:
     then:
       - display.page.show: next_page
@@ -38,11 +39,14 @@ display:
   - platform: ssd1306_i2c
     model: "SSD1306 128x64"
     id: matrix
-    update_interval: 40ms  # One pixel per update at the default 25 px/s.
+    update_interval: 40ms  # About 25 pixels per second at one pixel per frame.
     pages:
       - id: marquee_page
         lambda: |-
           id(scroll_text).draw(it, 8, Color(255, 255, 255));
+          const int progress_width = static_cast<int>(it.get_width() * id(scroll_text).progress());
+          if (progress_width > 0)
+            it.filled_rectangle(0, it.get_height() - 2, progress_width, 2, Color(255, 255, 255));
       - id: next_page
         lambda: |-
           it.print(0, 8, id(message_font), "Done!");
